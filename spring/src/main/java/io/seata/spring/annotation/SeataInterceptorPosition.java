@@ -28,12 +28,16 @@ public enum SeataInterceptorPosition {
     Any,
 
     /**
+     * seata的事务拦截器必须在，Spring的 TransactionInterceptor 之前
+     *
      * Must be before/higherThan/outsideOf TransactionInterceptor.<br/>
      * The SeataInterceptor's order must be smaller than TransactionInterceptor's order.
      */
     BeforeTransaction,
 
     /**
+     * seata的事务拦截器必须在，Spring的 TransactionInterceptor 之后
+     *
      * Must be after/lowerThan/insideOf TransactionInterceptor.<br/>
      * The SeataInterceptor's order must be bigger than TransactionInterceptor's order.
      */

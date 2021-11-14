@@ -195,12 +195,14 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
             return;
         }
         synchronized (getClientChannelManager().getChannels()) {
+            //将resource信息发送到seata server
             for (Map.Entry<String, Channel> entry : getClientChannelManager().getChannels().entrySet()) {
                 String serverAddress = entry.getKey();
                 Channel rmChannel = entry.getValue();
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("will register resourceId:{}", resourceId);
                 }
+                //发送注册消息
                 sendRegisterMessage(serverAddress, rmChannel, resourceId);
             }
         }

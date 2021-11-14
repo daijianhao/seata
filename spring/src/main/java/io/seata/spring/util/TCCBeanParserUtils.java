@@ -45,15 +45,17 @@ public class TCCBeanParserUtils {
      * @return boolean boolean
      */
     public static boolean isTccAutoProxy(Object bean, String beanName, ApplicationContext applicationContext) {
+        //判断bean是否为Remote的bean，如dubbo 的 ReferenceBean(用来引用远程service)
         boolean isRemotingBean = parserRemotingServiceInfo(bean, beanName);
         //get RemotingBean description
         RemotingDesc remotingDesc = DefaultRemotingParser.get().getRemotingBeanDesc(beanName);
         //is remoting bean
         if (isRemotingBean) {
             if (remotingDesc != null && remotingDesc.getProtocol() == Protocols.IN_JVM) {
-                //LocalTCC
+                //LocalTCC ，本地代理即 in jvm
                 return isTccProxyTargetBean(remotingDesc);
             } else {
+                //dubbo的referenceBean走这个分支
                 // sofa:reference / dubbo:reference, factory bean
                 return false;
             }

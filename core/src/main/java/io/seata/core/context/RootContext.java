@@ -97,7 +97,7 @@ public class RootContext {
 
     /**
      * Bind xid.
-     *
+     * 负责绑定事务ID , 与 Spring 的事务拦截器相互配合使用
      * @param xid the xid
      */
     public static void bind(@Nonnull String xid) {

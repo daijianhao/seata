@@ -37,6 +37,7 @@ import io.seata.rm.tcc.api.BusinessActionContext;
 /**
  * TCC resource manager
  *
+ * TCC 资源管理器实现类
  * @author zhangsen
  */
 public class TCCResourceManager extends AbstractResourceManager {
@@ -60,7 +61,9 @@ public class TCCResourceManager extends AbstractResourceManager {
     @Override
     public void registerResource(Resource resource) {
         TCCResource tccResource = (TCCResource)resource;
+        //放入缓存
         tccResourceCache.put(tccResource.getResourceId(), tccResource);
+        //调用父类注册resource，这里将发起远程rpc,将resource注册到seata server
         super.registerResource(tccResource);
     }
 

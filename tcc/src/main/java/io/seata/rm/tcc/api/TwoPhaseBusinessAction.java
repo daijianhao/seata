@@ -41,14 +41,14 @@ public @interface TwoPhaseBusinessAction {
 
     /**
      * TCC bean name, must be unique
-     *
+     * tcc bean名称
      * @return the string
      */
     String name();
 
     /**
      * commit method name
-     *
+     *  提交事务的方法
      * @return the string
      */
     String commitMethod() default "commit";

@@ -160,31 +160,41 @@ public class DefaultRemotingParser {
      * @return remoting desc
      */
     public RemotingDesc parserRemotingServiceInfo(Object bean, String beanName, RemotingParser remotingParser) {
+        //这里会创建 RemotingDesc of bean
         RemotingDesc remotingBeanDesc = remotingParser.getServiceDesc(bean, beanName);
         if (remotingBeanDesc == null) {
             return null;
         }
+        //保存
         remotingServiceMap.put(beanName, remotingBeanDesc);
 
         Class<?> interfaceClass = remotingBeanDesc.getInterfaceClass();
         Method[] methods = interfaceClass.getMethods();
-        if (remotingParser.isService(bean, beanName)) {
+        if (remotingParser.isService(bean, beanName)) {//如果是服务提供方
             try {
-                //service bean, registry resource
+                //service bean, registry resource，获取真实对象
                 Object targetBean = remotingBeanDesc.getTargetBean();
+                //遍历所有方法
                 for (Method m : methods) {
                     TwoPhaseBusinessAction twoPhaseBusinessAction = m.getAnnotation(TwoPhaseBusinessAction.class);
-                    if (twoPhaseBusinessAction != null) {
+                    if (twoPhaseBusinessAction != null) {//如果方法有TwoPhaseBusinessAction注解修饰
                         TCCResource tccResource = new TCCResource();
                         tccResource.setActionName(twoPhaseBusinessAction.name());
+                        //设置真实对象
                         tccResource.setTargetBean(targetBean);
+                        //准备阶段要执行的方法
                         tccResource.setPrepareMethod(m);
+                        //提交事务的方法名称
                         tccResource.setCommitMethodName(twoPhaseBusinessAction.commitMethod());
+                        //获取提交事务的方法对象
                         tccResource.setCommitMethod(interfaceClass.getMethod(twoPhaseBusinessAction.commitMethod(),
                                 BusinessActionContext.class));
+                        //回滚事务的方法名
                         tccResource.setRollbackMethodName(twoPhaseBusinessAction.rollbackMethod());
+                        //回滚事务的方法对象
                         tccResource.setRollbackMethod(interfaceClass.getMethod(twoPhaseBusinessAction.rollbackMethod(),
                                 BusinessActionContext.class));
+                        //注册为tcc resource
                         //registry tcc resource
                         DefaultResourceManager.get().registerResource(tccResource);
                     }

@@ -62,6 +62,7 @@ public class ActionInterceptorHandler {
                                        Callback<Object> targetCallback) throws Throwable {
         //TCC name
         String actionName = businessAction.name();
+        //创建业务 context
         BusinessActionContext actionContext = new BusinessActionContext();
         actionContext.setXid(xid);
         //set action name
@@ -78,6 +79,7 @@ public class ActionInterceptorHandler {
         int argIndex = 0;
         for (Class<?> cls : types) {
             if (cls.isAssignableFrom(BusinessActionContext.class)) {
+                //将BusinessActionContext 传入方法参数
                 arguments[argIndex] = actionContext;
                 break;
             }

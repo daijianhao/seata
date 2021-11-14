@@ -262,26 +262,32 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
 
         try {
             synchronized (PROXYED_SET) {
+                //如果已经代理过，就直接返回代理对象
                 if (PROXYED_SET.contains(beanName)) {
                     return bean;
                 }
                 interceptor = null;
-                //check TCC proxy
+                //check TCC proxy(方法上有 @TwoPhaseBusinessAction 修饰的)
                 if (TCCBeanParserUtils.isTccAutoProxy(bean, beanName, applicationContext)) {
+                    //todo TccActionInterceptor 给服务提供方 使用
                     //TCC interceptor, proxy bean of sofa:reference/dubbo:reference, and LocalTCC
                     interceptor = new TccActionInterceptor(TCCBeanParserUtils.getRemotingDesc(beanName));
                     ConfigurationCache.addConfigListener(ConfigurationKeys.DISABLE_GLOBAL_TRANSACTION,
                         (ConfigurationChangeListener)interceptor);
                 } else {
+                    //获取真实对象的class
                     Class<?> serviceInterface = SpringProxyUtils.findTargetClass(bean);
+                    //获取bean实现的接口
                     Class<?>[] interfacesIfJdk = SpringProxyUtils.findInterfaces(bean);
-
+                    //如果接口、类、方法没有 @GlobalTransactional 修饰，则直接返回当前对象
                     if (!existsAnnotation(new Class[]{serviceInterface})
                         && !existsAnnotation(interfacesIfJdk)) {
                         return bean;
                     }
-
+                    //到这说明有 @GlobalTransactional
                     if (globalTransactionalInterceptor == null) {
+                        //创建一个方法拦截器
+                        //todo GlobalTransactionalInterceptor 给服务使用方 使用
                         globalTransactionalInterceptor = new GlobalTransactionalInterceptor(failureHandlerHook);
                         ConfigurationCache.addConfigListener(
                             ConfigurationKeys.DISABLE_GLOBAL_TRANSACTION,
@@ -292,14 +298,19 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
 
                 LOGGER.info("Bean[{}] with name [{}] would use interceptor [{}]", bean.getClass().getName(), beanName, interceptor.getClass().getName());
                 if (!AopUtils.isAopProxy(bean)) {
+                    //如果当前对象不是aop代理对象，则让父类去决定是否代理
                     bean = super.wrapIfNecessary(bean, beanName, cacheKey);
                 } else {
+                    //通过反射获取 bean 的增强支持
                     AdvisedSupport advised = SpringProxyUtils.getAdvisedSupport(bean);
+                    //创建 bean 的事务支持的 拦截器，并包装为 advisor
                     Advisor[] advisor = buildAdvisors(beanName, getAdvicesAndAdvisorsForBean(null, null, null));
                     int pos;
                     for (Advisor avr : advisor) {
                         // Find the position based on the advisor's order, and add to advisors by pos
+                        //确定 avr 在 AdvisedSupport 中的位置
                         pos = findAddSeataAdvisorPosition(advised, avr);
+                        //根据位置 加入Advisor
                         advised.addAdvisor(pos, avr);
                     }
                 }
@@ -346,20 +357,25 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
      */
     private int findAddSeataAdvisorPosition(AdvisedSupport advised, Advisor seataAdvisor) {
         // Get seataAdvisor's order and interceptorPosition
+        //获取 seataAdvisor 的 order
         int seataOrder = OrderUtil.getOrder(seataAdvisor);
+        //获取 SeataInterceptorPosition 对象
         SeataInterceptorPosition seataInterceptorPosition = getSeataInterceptorPosition(seataAdvisor);
 
         // If the interceptorPosition is any, check lowest or highest.
-        if (SeataInterceptorPosition.Any == seataInterceptorPosition) {
+        if (SeataInterceptorPosition.Any == seataInterceptorPosition) {//如果是any
             if (seataOrder == Ordered.LOWEST_PRECEDENCE) {
                 // the last position
+                //放在最后
                 return advised.getAdvisors().length;
             } else if (seataOrder == Ordered.HIGHEST_PRECEDENCE) {
                 // the first position
+                //放在开始
                 return 0;
             }
         } else {
             // If the interceptorPosition is not any, compute position if has TransactionInterceptor.
+            //确定 拦截器的 位置
             Integer position = computePositionIfHasTransactionInterceptor(advised, seataAdvisor, seataInterceptorPosition, seataOrder);
             if (position != null) {
                 // the position before or after TransactionInterceptor

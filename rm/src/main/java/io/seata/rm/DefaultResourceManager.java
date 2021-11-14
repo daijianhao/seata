@@ -67,6 +67,7 @@ public class DefaultResourceManager implements ResourceManager {
 
     protected void initResourceManagers() {
         //init all resource managers
+        //初始化资源管理器，通过SPI机制加载
         List<ResourceManager> allResourceManagers = EnhancedServiceLoader.loadAll(ResourceManager.class);
         if (CollectionUtils.isNotEmpty(allResourceManagers)) {
             for (ResourceManager rm : allResourceManagers) {
@@ -111,6 +112,7 @@ public class DefaultResourceManager implements ResourceManager {
 
     @Override
     public void registerResource(Resource resource) {
+        //根据类型注册到不同的事务管理器中
         getResourceManager(resource.getBranchType()).registerResource(resource);
     }
 

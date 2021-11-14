@@ -81,18 +81,23 @@ public class TccActionInterceptor implements MethodInterceptor, ConfigurationCha
     public Object invoke(final MethodInvocation invocation) throws Throwable {
         if (!RootContext.inGlobalTransaction() || disable || RootContext.inSagaBranch()) {
             //not in transaction, or this interceptor is disabled
+            //没有在事务的上下文，则执行下一个拦截器
             return invocation.proceed();
         }
+        //获取要执行的method
         Method method = getActionInterfaceMethod(invocation);
+        //获取方法上的 TwoPhaseBusinessAction 注解
         TwoPhaseBusinessAction businessAction = method.getAnnotation(TwoPhaseBusinessAction.class);
         //try method
         if (businessAction != null) {
             //save the xid
+            //事务ID
             String xid = RootContext.getXID();
             //save the previous branchType
             BranchType previousBranchType = RootContext.getBranchType();
             //if not TCC, bind TCC branchType
             if (BranchType.TCC != previousBranchType) {
+                //不是tcc则改为tcc
                 RootContext.bindBranchType(BranchType.TCC);
             }
             try {
@@ -109,6 +114,7 @@ public class TccActionInterceptor implements MethodInterceptor, ConfigurationCha
             }
         }
 
+        //没有 @TwoPhaseBusinessAction 修饰，则执行原方法
         //not TCC try method
         return invocation.proceed();
     }

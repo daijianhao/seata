@@ -27,6 +27,9 @@ import io.seata.rm.tcc.remoting.RemotingDesc;
  */
 public class DubboRemotingParser extends AbstractedRemotingParser {
 
+    /**
+     * 判断是否是dubbo的 referenceBean
+     */
     @Override
     public boolean isReference(Object bean, String beanName) throws FrameworkException {
         Class<?> c = bean.getClass();
@@ -34,6 +37,9 @@ public class DubboRemotingParser extends AbstractedRemotingParser {
             || "org.apache.dubbo.config.spring.ReferenceBean".equals(c.getName());
     }
 
+    /**
+     * 判断是否是dubbo的ServiceBean
+     */
     @Override
     public boolean isService(Object bean, String beanName) throws FrameworkException {
         Class<?> c = bean.getClass();
@@ -41,24 +47,34 @@ public class DubboRemotingParser extends AbstractedRemotingParser {
             || "org.apache.dubbo.config.spring.ServiceBean".equals(c.getName());
     }
 
+    /**
+     * 获取 Bean 的描述信息
+     */
     @Override
     public RemotingDesc getServiceDesc(Object bean, String beanName) throws FrameworkException {
+        //再次检查
         if (!this.isRemoting(bean, beanName)) {
             return null;
         }
         try {
             RemotingDesc serviceBeanDesc = new RemotingDesc();
+            //获取Bean实现的接口
             Class<?> interfaceClass = (Class<?>)ReflectionUtil.invokeMethod(bean, "getInterfaceClass");
             String interfaceClassName = (String)ReflectionUtil.getFieldValue(bean, "interfaceName");
+            //版本
             String version = (String)ReflectionUtil.invokeMethod(bean, "getVersion");
+            //分组
             String group = (String)ReflectionUtil.invokeMethod(bean, "getGroup");
             serviceBeanDesc.setInterfaceClass(interfaceClass);
             serviceBeanDesc.setInterfaceClassName(interfaceClassName);
             serviceBeanDesc.setUniqueId(version);
             serviceBeanDesc.setGroup(group);
+            //协议这里是类型 （sofa,dubbo等）
             serviceBeanDesc.setProtocol(Protocols.DUBBO);
             if (isService(bean, beanName)) {
+                //如果是ServiceBean,获取真实对象
                 Object targetBean = ReflectionUtil.getFieldValue(bean, "ref");
+                //设置真实对象
                 serviceBeanDesc.setTargetBean(targetBean);
             }
             return serviceBeanDesc;
